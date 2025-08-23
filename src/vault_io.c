@@ -48,3 +48,26 @@ static int read_file (const char*path, unsigned char **buff, size_t *len){
     *len = numRead;
     return 1; // Success
 }
+
+
+/* Write buffer Into A Binary File */
+static int write_file(const char *path, const unsigned char *buf, size_t len){
+
+    FILE* fptr = fopen(path, 'wb'); // Open Binary File To Write
+    if (fptr == NULL){
+        printf("Could Not Open File!\n");
+        fclose(fptr);
+        return -1;
+    }
+
+    size_t numWritten = fwrite(buf, 1, len, fptr); // Write Entire File
+
+    if (numWritten != len){ // Error Check To See If Entire Fire Was Written
+        printf("Could Not Write To File!\n");
+        fclose(fptr);
+        return -1;
+    }
+
+    fclose(fptr);
+    return 1; // Success
+}
