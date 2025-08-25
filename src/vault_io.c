@@ -71,3 +71,31 @@ static int write_file(const char *path, const unsigned char *buf, size_t len){
     fclose(fptr);
     return 1; // Success
 }
+
+
+static int prompt_password(const char *label, char *out, size_t outsz, int confirm){
+    char tmp[1024]; // Temp Buffer for Confirmation
+
+    if (!out || outsz == 0) return -1;
+
+    // Get Password And Store in out
+    printf("%s", label);
+    if (!fgets(out, outsz, stdin)) return -1;
+    out[strcspn(out, "\r\n")] = '\0';  // Strip Newline if Present
+
+    // Confirm Password
+    printf("Confirm Password: ");
+    if (!fgets(tmp, sizeof(tmp), stdin)) return -1;
+    tmp[strcspn(tmp, "\r\n")] = '\0'; // Strip Newline if Present
+
+    // Check if Passwords Match
+    if (strcmp(out, tmp) != 0) {
+        printf("Passwords do not match!\n");
+        sodium_memzero(out, outsz);
+        sodium_memzero(tmp, sizeof(tmp));
+        return -1;
+    }
+
+    sodium_memzero(tmp, sizeof(tmp));
+    return 1; // Success
+}
