@@ -1,7 +1,7 @@
 #include "../include/header.h"
 
 /* Read Any File In Binary Form and Store Its Data Into buff Variable */
-static int read_file (const char*path, unsigned char **buff, size_t *len){
+int read_file (const char*path, unsigned char **buff, size_t *len){
     *buff = NULL; *len = 0;
 
     FILE *fptr = fopen(path, 'rb'); // Open File in Binary Read Mode
@@ -51,7 +51,7 @@ static int read_file (const char*path, unsigned char **buff, size_t *len){
 
 
 /* Write buffer Into A Binary File */
-static int write_file(const char *path, const unsigned char *buf, size_t len){
+int write_file(const char *path, const unsigned char *buf, size_t len){
 
     FILE* fptr = fopen(path, 'wb'); // Open Binary File To Write
     if (fptr == NULL){
@@ -73,7 +73,7 @@ static int write_file(const char *path, const unsigned char *buf, size_t len){
 }
 
 
-static int prompt_password(const char *label, char *out, size_t outsz, int confirm){
+int prompt_password(const char *label, char *out, size_t outsz, int confirm){
     char tmp[1024]; // Temp Buffer for Confirmation
 
     if (!out || outsz == 0) return -1;
