@@ -4,7 +4,7 @@
 int read_file (const char*path, unsigned char **buff, size_t *len){
     *buff = NULL; *len = 0;
 
-    FILE *fptr = fopen(path, 'rb'); // Open File in Binary Read Mode
+    FILE *fptr = fopen(path, "rb"); // Open File in Binary Read Mode
     if (fptr == NULL){ // Error Check
         printf("Error Opening File!\n");
         fclose(fptr);
@@ -12,7 +12,7 @@ int read_file (const char*path, unsigned char **buff, size_t *len){
     }
 
     if (fseek(fptr, 0, SEEK_END) != 0){ // Move Pointer to End of File
-        print("Fseek Error!\n");
+        printf("Fseek Error!\n");
         fclose(fptr);
         return -1;
     }
@@ -53,7 +53,7 @@ int read_file (const char*path, unsigned char **buff, size_t *len){
 /* Write buffer Into A Binary File */
 int write_file(const char *path, const unsigned char *buf, size_t len){
 
-    FILE* fptr = fopen(path, 'wb'); // Open Binary File To Write
+    FILE* fptr = fopen(path, "wb"); // Open Binary File To Write
     if (fptr == NULL){
         printf("Could Not Open File!\n");
         fclose(fptr);

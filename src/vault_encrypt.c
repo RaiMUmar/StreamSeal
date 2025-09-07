@@ -1,6 +1,6 @@
 #include "../include/header.h"
 
-static int encrypt_file (const char *in_path, const char *out_path) {
+int encrypt_file (const char *in_path, const char *out_path) {
     int rc = -1; // Assume Failure Unitil Success
 
     char pwd [1024];

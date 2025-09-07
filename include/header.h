@@ -3,6 +3,7 @@
 #include <stdlib.h> 
 #include <stdint.h> 
 #include <string.h>
+#include <errno.h>
 
 static const uint8_t MAGIC[6] = { 'S','I','M','P','L','1' };
 
@@ -15,11 +16,11 @@ typedef struct {
 
 int main(int argc, char **argv);
 int decrypt_file (const char *in_path, const char *out_path);
-static int encrypt_file (const char *in_path, const char *out_path);
+int encrypt_file (const char *in_path, const char *out_path);
 int read_file (const char*path, unsigned char **buff, size_t *len);
 int write_file(const char *path, const unsigned char *buf, size_t len);
 int prompt_password(const char *label, char *out, size_t outsz, int confirm);
-static int init_user();
-int login_user();
+int init_user(void);
+int login_user(void);
 void print_hex (const char *label, const unsigned char *buf, size_t len);
-static void usage(const char *prog);
+void usage(const char *prog);

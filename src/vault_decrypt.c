@@ -10,7 +10,7 @@ int decrypt_file (const char *in_path, const char *out_path){
     }
 
     unsigned char *enc = NULL; size_t elen = 0;
-    if (read_entire_file(in_path, &enc, &elen) != 0) { 
+    if (read_file(in_path, &enc, &elen) != 0) { 
         sodium_memzero(pwd, sizeof pwd); 
         return -1; 
     }
@@ -79,7 +79,7 @@ int decrypt_file (const char *in_path, const char *out_path){
         return -1;
     }
 
-    if (write_entire_file(out_path, plain, (size_t)real_plen) != 0) {
+    if (write_file(out_path, plain, (size_t)real_plen) != 0) {
         sodium_memzero(key, sizeof key);
         sodium_free(enc); 
         sodium_free(plain);

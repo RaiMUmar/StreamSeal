@@ -1,7 +1,7 @@
 #include "../include/header.h"
 
-static void usage(const char *prog) {
-    printf(stderr,
+void usage(const char *prog) {
+    fprintf(stderr,
         "Usage:\n"
         " %s init-user\n"
         " %s login\n"
