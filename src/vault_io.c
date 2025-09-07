@@ -7,7 +7,6 @@ int read_file (const char*path, unsigned char **buff, size_t *len){
     FILE *fptr = fopen(path, "rb"); // Open File in Binary Read Mode
     if (fptr == NULL){ // Error Check
         printf("Error Opening File!\n");
-        fclose(fptr);
         return -1;
     }
 
@@ -30,17 +29,28 @@ int read_file (const char*path, unsigned char **buff, size_t *len){
         return -1;
     }
 
-    *buff = sodium_malloc((size_t)fileSize); // Malloc Enough Space To Read Entire File
-    if (!*buff){ // Check for Malloc Error
-        printf("Could Not Malloc!\n");
-        fclose(fptr);
-        return -1;
+    if (fileSize > 0){
+        *buff = sodium_malloc((size_t)fileSize); // Malloc Enough Space To Read Entire File
+        if (!*buff){ // Check for Malloc Error
+            printf("Could Not Malloc!\n");
+            fclose(fptr);
+            return -1;
+        }
+    } else {
+        *buff = sodium_malloc(1); // Malloc Enough Space To Read Entire File
+        if (!*buff){ // Check for Malloc Error
+            printf("Could Not Malloc!\n");
+            fclose(fptr);
+            return -1;
+        }
     }
+    
 
     size_t numRead = fread(*buff, 1, (size_t)fileSize, fptr); // Read File 
     if (numRead != (size_t)fileSize){
         printf("File Not Read Properly!\n");
         fclose(fptr);
+        sodium_free(*buff);
         return -1;
     }
 
@@ -84,18 +94,20 @@ int prompt_password(const char *label, char *out, size_t outsz, int confirm){
     out[strcspn(out, "\r\n")] = '\0';  // Strip Newline if Present
 
     // Confirm Password
-    printf("Confirm Password: ");
-    if (!fgets(tmp, sizeof(tmp), stdin)) return -1;
-    tmp[strcspn(tmp, "\r\n")] = '\0'; // Strip Newline if Present
+    if (confirm){
+        printf("Confirm Password: ");
+        if (!fgets(tmp, sizeof(tmp), stdin)) return -1;
+        tmp[strcspn(tmp, "\r\n")] = '\0'; // Strip Newline if Present
 
-    // Check if Passwords Match
-    if (strcmp(out, tmp) != 0) {
-        printf("Passwords do not match!\n");
-        sodium_memzero(out, outsz);
-        sodium_memzero(tmp, sizeof(tmp));
-        return -1;
+            // Check if Passwords Match
+        if (strcmp(out, tmp) != 0) {
+            printf("Passwords do not match!\n");
+            sodium_memzero(out, outsz);
+            sodium_memzero(tmp, sizeof(tmp));
+            return -1;
+        }
     }
-
+    
     sodium_memzero(tmp, sizeof(tmp));
     return 1; // Success
 }

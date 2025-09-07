@@ -14,7 +14,7 @@ int init_user(void){
 
     sodium_memzero(pwd, sizeof(pwd));
 
-    if (write_file(path, hashed, strlen(hashed)) != 1){ // Write the Hash
+    if (write_file(path, (const unsigned char *)hashed, strlen(hashed)) != 1){ // Write the Hash
         sodium_memzero(hashed, sizeof(hashed));
         return -1;
     }
@@ -33,19 +33,23 @@ int login_user(void){
         return -1;
     }
 
-    filebuf = realloc(filebuf, filelen + 1);
-    if (!filebuf){
-        printf("Realloc Failed!\n");
+    unsigned char *filebuf2 = sodium_malloc(filelen+1);
+    if (!filebuf2){
+        printf("Malloc Failed!\n");
+        sodium_free(filebuf);
         return -1;
     }
-    filebuf[filelen] = '\0';
+    memcpy(filebuf2, filebuf, filelen);
+    filebuf2[filelen] = '\0';
+    sodium_free(filebuf);
+    filebuf = filebuf2;
 
     if (prompt_password("Enter Password: ", pwd, sizeof (pwd), 0) != 1){
         sodium_free(filebuf);
         return -1;
     }
 
-    int success = crypto_pwhash_str_verify(filebuf, pwd, strlen(pwd)); // Check if Password Matches
+    int success = crypto_pwhash_str_verify((const char *)filebuf, pwd, strlen(pwd)); // Check if Password Matches
 
     sodium_memzero(pwd, sizeof(pwd));
     sodium_free(filebuf);
