@@ -25,3 +25,6 @@ vault_print_hex.o: ./src/vault_print_hex.c
 
 vault_usage.o: ./src/vault_usage.c
 	clang $(CFLAGS_COMMON) -I./include ./src/vault_usage.c -c
+
+clean:
+	rm -f *.o bin/vault
