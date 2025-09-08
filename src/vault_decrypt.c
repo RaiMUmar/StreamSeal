@@ -4,17 +4,18 @@
 int decrypt_file (const char *in_path, const char *out_path){
     int rc = -1; // Assume Failure Until Success
 
+    printf("going into decrypt\n\n");
     char pwd[1024];
-    if (prompt_password("Password for decryption: ", pwd, sizeof pwd, /*confirm=*/0) != 1){
+    if (prompt_password("Password for decryption: ", pwd, sizeof pwd, 0) != 1){
         return -1;
     }
-
+    printf("Prompt done\n\n");
     unsigned char *enc = NULL; size_t elen = 0;
-    if (read_file(in_path, &enc, &elen) != 0) { 
+    if (read_file(in_path, &enc, &elen) != 1) { 
         sodium_memzero(pwd, sizeof pwd); 
         return -1; 
     }
-
+    printf("Read file done\n\n");
     if (elen < sizeof(simple_hdr_t)) {
         printf("File too small to be valid.\n");
         sodium_memzero(pwd, sizeof pwd);
