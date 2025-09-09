@@ -27,4 +27,4 @@ vault_usage.o: ./src/vault_usage.c
 	clang $(CFLAGS_COMMON) -I./include ./src/vault_usage.c -c
 
 clean:
-	rm -f *.o bin/vault
+	rm -f *.o *.pass bin/vault
