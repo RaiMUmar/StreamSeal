@@ -24,3 +24,4 @@ int init_user(void);
 int login_user(void);
 void print_hex (const char *label, const unsigned char *buf, size_t len);
 void usage(const char *prog);
+int user_created(const char *path);

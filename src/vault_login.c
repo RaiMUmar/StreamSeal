@@ -2,7 +2,13 @@
 
 /* Initialize New User */
 int init_user(void){
-    char pwd[1024]; char hashed[crypto_pwhash_STRBYTES]; const char *path = "user.pass"; // Initialize Variables
+    const char *path = "user.pass"; // Initialize Path Variable
+    if (user_created(path)){
+        printf("User has already been initialized!\n");
+        return 1;
+    }
+
+    char pwd[1024]; char hashed[crypto_pwhash_STRBYTES]; 
 
     if (prompt_password("Create Password: ", pwd, sizeof(pwd), 1) != 1) return -1;
 
@@ -61,4 +67,12 @@ int login_user(void){
         printf("Login Failed\n");
         return -1;
     }
+}
+
+int user_created(const char *path){
+    FILE *fptr = fopen(path, "rb");
+    if (fptr == NULL){
+        return 0;
+    }
+    return 1;
 }
