@@ -4,6 +4,8 @@
 #include <stdint.h> 
 #include <string.h>
 #include <errno.h>
+#include <sys/stat.h> 
+#include <dirent.h>
 
 static const uint8_t MAGIC[6] = { 'S','I','M','P','L','1' };
 
@@ -25,3 +27,4 @@ int login_user(void);
 void print_hex (const char *label, const unsigned char *buf, size_t len);
 void usage(const char *prog);
 int user_created(const char *path);
+int path_handler(const char *path, const char *notNeeded);

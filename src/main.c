@@ -36,8 +36,8 @@ int main(int argc, char **argv){
             usage(argv[0]); 
             return 1; 
         }
-        return encrypt_file(in_path, out_path) == 1 ? 1 : 4;
-
+        //return encrypt_file(in_path, out_path) == 1 ? 1 : 4;
+        return path_handler(in_path, out_path);
 
     } else if (strcmp(cmd, "decrypt") == 0) {
         const char *in_path = NULL, *out_path = NULL;

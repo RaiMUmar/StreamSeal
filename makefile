@@ -2,8 +2,11 @@ PKGCONF ?= pkg-config
 CFLAGS_COMMON = -std=c99 -Wall -pedantic $(shell $(PKGCONF) --cflags libsodium)
 LDFLAGS = $(shell $(PKGCONF) --libs libsodium)
 
-vault: main.o vault_decrypt.o vault_encrypt.o vault_io.o vault_login.o vault_print_hex.o vault_usage.o
-	clang ./main.o ./vault_decrypt.o ./vault_encrypt.o ./vault_io.o ./vault_login.o ./vault_print_hex.o ./vault_usage.o $(LDFLAGS) -o bin/vault
+vault: main.o vault_decrypt.o vault_encrypt.o vault_io.o vault_login.o vault_print_hex.o vault_usage.o vault_path_handler.o
+	clang ./vault_path_handler.o ./main.o ./vault_decrypt.o ./vault_encrypt.o ./vault_io.o ./vault_login.o ./vault_print_hex.o ./vault_usage.o $(LDFLAGS) -o bin/vault
+
+vault_path_handler.o: ./src/vault_path_handler.c 
+	clang $(CFLAGS_COMMON) -I./include ./src/vault_path_handler.c -c
 
 main.o: ./src/main.c
 	clang $(CFLAGS_COMMON) -I./include ./src/main.c -c
