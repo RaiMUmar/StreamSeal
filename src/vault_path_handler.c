@@ -1,6 +1,6 @@
 #include "../include/header.h"
 
-int path_handler(encrypt_func f, const char *path, char *pwd){
+int path_handler(encrypt_func f, const char *path, char *pwd, const char *suffix){
     struct stat path_stat;
 
     if (stat(path, &path_stat) != 0){
@@ -9,7 +9,7 @@ int path_handler(encrypt_func f, const char *path, char *pwd){
     }
 
     if (S_ISREG(path_stat.st_mode)){    // It is a file
-        f(path, pwd, ".txt");
+        f(path, pwd, suffix);
         return 1; 
 
     } else if (S_ISDIR(path_stat.st_mode)) {    // It is a folder
@@ -28,7 +28,7 @@ int path_handler(encrypt_func f, const char *path, char *pwd){
             char full_path[1024];
             snprintf(full_path, sizeof(full_path), "%s/%s", path, entry->d_name);
             
-            path_handler(f, full_path, pwd);
+            path_handler(f, full_path, pwd, suffix);
         }
     closedir(dir);
     }

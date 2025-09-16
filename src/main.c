@@ -17,11 +17,11 @@ int main(int argc, char **argv){
 
     if (strcmp(cmd, "init-user") == 0) {
         return init_user() == 1 ? 1 : 2;
-
-
+        
+    /*
     } else if (strcmp(cmd, "login") == 0) {
         return login_user(pwd) == 1 ? 1 : 3;
-
+    */
 
     } else if (strcmp(cmd, "encrypt") == 0) {
         if (login_user(pwd)){
@@ -36,12 +36,12 @@ int main(int argc, char **argv){
             in_path = argv[2];
 
             printf("Encrypting...\n");
-            return path_handler(encrypt_inplace, in_path, pwd);
+            return path_handler(encrypt_inplace, in_path, pwd, ".");
         }
 
     } else if (strcmp(cmd, "decrypt") == 0) {
         if (login_user(pwd)){
-            const char *in_path = NULL;
+            const char *in_path = NULL, *suffix = NULL;
 
             if (argc < 3) { 
                 printf("File not provided!\n");
@@ -49,10 +49,16 @@ int main(int argc, char **argv){
                 return 1; 
             }
 
+            if (argc > 3) {
+                suffix = argv[3];
+            } else {
+                suffix = ".dec";
+            }
+
             in_path = argv[2];
 
             printf("Decrypting...\n");
-            return path_handler(decrypt_inplace, in_path, pwd);
+            return path_handler(decrypt_inplace, in_path, pwd, suffix);
         }
 
     } else {

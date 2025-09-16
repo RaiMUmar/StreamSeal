@@ -29,7 +29,7 @@ int login_user(char *pwd);
 void print_hex (const char *label, const unsigned char *buf, size_t len);
 void usage(const char *prog);
 int user_created(const char *path);
-int path_handler(encrypt_func f,const char *path, char *pwd);
+int path_handler(encrypt_func f,const char *path, char *pwd, const char *suffix);
 int decrypt_inplace(const char *in_path, char *pwd, const char *wanted_ext);
 int encrypt_inplace(const char *in_path, char *pwd, const char *garbage);
 int build_path(const char *in_path, const char *suffix, char *out_path, size_t out_sz);
