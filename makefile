@@ -2,8 +2,8 @@ PKGCONF ?= pkg-config
 CFLAGS_COMMON = -std=c99 -Wall -pedantic $(shell $(PKGCONF) --cflags libsodium)
 LDFLAGS = $(shell $(PKGCONF) --libs libsodium)
 
-vault: main.o vault_decrypt.o vault_encrypt.o vault_io.o vault_login.o vault_print_hex.o vault_usage.o vault_path_handler.o
-	clang ./vault_path_handler.o ./main.o ./vault_decrypt.o ./vault_encrypt.o ./vault_io.o ./vault_login.o ./vault_print_hex.o ./vault_usage.o $(LDFLAGS) -o bin/vault
+vault: main.o vault_decrypt.o vault_encrypt.o vault_io.o vault_login.o vault_print_hex.o vault_usage.o vault_path_handler.o vault_decrypt_inplace.o vault_encrypt_inplace.o vault_delete.o vault_build_path.o
+	clang ./vault_build_path.o ./vault_delete.o ./vault_encrypt_inplace.o ./vault_decrypt_inplace.o ./vault_path_handler.o ./main.o ./vault_decrypt.o ./vault_encrypt.o ./vault_io.o ./vault_login.o ./vault_print_hex.o ./vault_usage.o $(LDFLAGS) -o bin/vault
 
 vault_path_handler.o: ./src/vault_path_handler.c 
 	clang $(CFLAGS_COMMON) -I./include ./src/vault_path_handler.c -c
@@ -28,6 +28,18 @@ vault_print_hex.o: ./src/vault_print_hex.c
 
 vault_usage.o: ./src/vault_usage.c
 	clang $(CFLAGS_COMMON) -I./include ./src/vault_usage.c -c
+
+vault_build_path.o: ./src/vault_build_path.c
+	clang $(CFLAGS_COMMON) -I./include ./src/vault_build_path.c -c
+
+vault_delete.o: ./src/vault_delete.c
+	clang $(CFLAGS_COMMON) -I./include ./src/vault_delete.c -c
+
+vault_encrypt_inplace.o: ./src/vault_encrypt_inplace.c
+	clang $(CFLAGS_COMMON) -I./include ./src/vault_encrypt_inplace.c -c
+
+vault_decrypt_inplace.o: ./src/vault_decrypt_inplace.c
+	clang $(CFLAGS_COMMON) -I./include ./src/vault_decrypt_inplace.c -c
 
 clean:
 	rm -f *.o *.pass bin/vault

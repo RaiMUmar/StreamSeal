@@ -35,15 +35,15 @@ int login_user(char *pwd){
     unsigned char *filebuf = NULL; const char *path = "user.pass"; size_t filelen = 0; // Initialize Variables
 
     if (read_file(path, &filebuf, &filelen) != 1){ // Read Password File
-        printf("No password file found!\n");
-        return -1;
+        printf("User not initialized yet!\n");
+        return 0;
     }
 
     unsigned char *filebuf2 = sodium_malloc(filelen+1);
     if (!filebuf2){
         printf("Malloc Failed!\n");
         sodium_free(filebuf);
-        return -1;
+        return 0;
     }
     memcpy(filebuf2, filebuf, filelen);
     filebuf2[filelen] = '\0';
@@ -52,7 +52,7 @@ int login_user(char *pwd){
 
     if (prompt_password("Enter Password: ", pwd, sizeof(pwd), 0) != 1){
         sodium_free(filebuf);
-        return -1;
+        return 0;
     }
 
     int success = crypto_pwhash_str_verify((const char *)filebuf, pwd, strlen(pwd)); // Check if Password Matches

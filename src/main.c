@@ -25,39 +25,34 @@ int main(int argc, char **argv){
 
     } else if (strcmp(cmd, "encrypt") == 0) {
         if (login_user(pwd)){
-            printf("Encrypting...\n");
-            const char *in_path = NULL, *out_path = NULL;
+            const char *in_path = NULL;
 
-            for (int i = 2; i + 1 < argc; i++) {
-                if (strcmp(argv[i], "-in") == 0) 
-                    in_path = argv[++i];
-                else if (strcmp(argv[i], "-out") == 0) 
-                    out_path = argv[++i];
-            }
-
-            if (!in_path || !out_path) { 
+            if (argc < 3) { 
+                printf("File not provided!\n");
                 usage(argv[0]); 
                 return 1; 
             }
-            return path_handler(encrypt_file, in_path, out_path, pwd);
+
+            in_path = argv[2];
+
+            printf("Encrypting...\n");
+            return path_handler(encrypt_inplace, in_path, pwd);
         }
 
     } else if (strcmp(cmd, "decrypt") == 0) {
         if (login_user(pwd)){
-            printf("Decrypting...\n");
-            const char *in_path = NULL, *out_path = NULL;
+            const char *in_path = NULL;
 
-            for (int i = 2; i + 1 < argc; i++) {
-                if (strcmp(argv[i], "-in") == 0) 
-                    in_path = argv[++i];
-                else if (strcmp(argv[i], "-out") == 0) 
-                    out_path = argv[++i];
-            }
-            if (!in_path || !out_path) { 
+            if (argc < 3) { 
+                printf("File not provided!\n");
                 usage(argv[0]); 
                 return 1; 
             }
-            return path_handler(decrypt_file, in_path, out_path, pwd);
+
+            in_path = argv[2];
+
+            printf("Decrypting...\n");
+            return path_handler(decrypt_inplace, in_path, pwd);
         }
 
     } else {

@@ -6,7 +6,7 @@ void usage(const char *prog) {
         "Usage:\n"
         " %s init-user\n"
         " %s login\n"
-        " %s encrypt -in <plain> -out <cipher>\n"
-        " %s decrypt -in <cipher> -out <plain>\n",
+        " %s encrypt <plain>\n"
+        " %s decrypt <cipher>\n",
         prog, prog, prog, prog);
 }
