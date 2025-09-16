@@ -31,8 +31,8 @@ int init_user(void){
 }
 
 /* Login User */
-int login_user(void){
-    unsigned char *filebuf = NULL; const char *path = "user.pass"; size_t filelen = 0; char pwd[1024]; // Initialize Variables
+int login_user(char *pwd){
+    unsigned char *filebuf = NULL; const char *path = "user.pass"; size_t filelen = 0; // Initialize Variables
 
     if (read_file(path, &filebuf, &filelen) != 1){ // Read Password File
         printf("No password file found!\n");
@@ -50,22 +50,22 @@ int login_user(void){
     sodium_free(filebuf);
     filebuf = filebuf2;
 
-    if (prompt_password("Enter Password: ", pwd, sizeof (pwd), 0) != 1){
+    if (prompt_password("Enter Password: ", pwd, sizeof(pwd), 0) != 1){
         sodium_free(filebuf);
         return -1;
     }
 
     int success = crypto_pwhash_str_verify((const char *)filebuf, pwd, strlen(pwd)); // Check if Password Matches
 
-    sodium_memzero(pwd, sizeof(pwd));
+    sodium_memzero(pwd, strlen(pwd));
     sodium_free(filebuf);
 
     if (success == 0){
         printf("Login Success\n");
-        return 1;
+        return 1; // Success
     } else {
         printf("Login Failed\n");
-        return -1;
+        return 0;
     }
 }
 

@@ -15,16 +15,18 @@ typedef struct {
     unsigned char nonce[12];
 } simple_hdr_t;
 
+typedef int (*encrypt_func)(const char*, const char*, char*);
+
 
 int main(int argc, char **argv);
-int decrypt_file (const char *in_path, const char *out_path);
-int encrypt_file (const char *in_path, const char *out_path);
+int decrypt_file (const char *in_path, const char *out_path, char *pwd);
+int encrypt_file (const char *in_path, const char *out_path, char *pwd);
 int read_file (const char*path, unsigned char **buff, size_t *len);
 int write_file(const char *path, const unsigned char *buf, size_t len);
 int prompt_password(const char *label, char *out, size_t outsz, int confirm);
 int init_user(void);
-int login_user(void);
+int login_user(char *pwd);
 void print_hex (const char *label, const unsigned char *buf, size_t len);
 void usage(const char *prog);
 int user_created(const char *path);
-int path_handler(const char *path, const char *notNeeded);
+int path_handler(encrypt_func f,const char *path, const char *out_path, char *pwd);

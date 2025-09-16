@@ -1,23 +1,18 @@
 #include "../include/header.h"
 
 
-int decrypt_file (const char *in_path, const char *out_path){
+int decrypt_file (const char *in_path, const char *out_path, char *pwd){
     int rc = -1; // Assume Failure Until Success
-
-    char pwd[1024];
-    if (prompt_password("Password for decryption: ", pwd, sizeof pwd, 0) != 1){
-        return -1;
-    }
 
     unsigned char *enc = NULL; size_t elen = 0;
     if (read_file(in_path, &enc, &elen) != 1) { 
-        sodium_memzero(pwd, sizeof pwd); 
+        sodium_memzero(pwd, strlen(pwd)); 
         return -1; 
     }
     
     if (elen < sizeof(simple_hdr_t)) {
         printf("File too small to be valid.\n");
-        sodium_memzero(pwd, sizeof pwd);
+        sodium_memzero(pwd, strlen(pwd));
         sodium_free(enc);
         return -1;
     }
@@ -26,7 +21,7 @@ int decrypt_file (const char *in_path, const char *out_path){
     memcpy(&hdr, enc, sizeof hdr); 
     if (memcmp(hdr.magic, MAGIC, sizeof MAGIC) != 0) {
         printf("Bad magic: not our format.\n");
-        sodium_memzero(pwd, sizeof pwd);
+        sodium_memzero(pwd, strlen(pwd));
         sodium_free(enc);
         return -1;
     }
@@ -44,12 +39,12 @@ int decrypt_file (const char *in_path, const char *out_path){
             crypto_pwhash_ALG_ARGON2ID13) != 0) {
 
         printf("crypto_pwhash failed (OOM)\n");
-        sodium_memzero(pwd, sizeof pwd);
+        sodium_memzero(pwd, strlen(pwd));
         sodium_free(enc);
         return -1;
     }
 
-    sodium_memzero(pwd, sizeof pwd); // done with password
+    sodium_memzero(pwd, strlen(pwd)); // done with password
 
     size_t max_plen = (clen >= crypto_aead_chacha20poly1305_ietf_ABYTES)
         ? (clen - crypto_aead_chacha20poly1305_ietf_ABYTES)

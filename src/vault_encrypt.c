@@ -1,16 +1,11 @@
 #include "../include/header.h"
 
-int encrypt_file (const char *in_path, const char *out_path) {
+int encrypt_file (const char *in_path, const char *out_path, char *pwd) {
     int rc = -1; // Assume Failure Unitil Success
-
-    char pwd [1024];
-    if (prompt_password("Enter Password To Encrypt: ", pwd, sizeof(pwd),0) != 1){
-        return -1;
-    }
 
     unsigned char *plain = NULL; size_t plen = 0;
     if (read_file (in_path, &plain, &plen) != 1){
-        sodium_memzero(pwd, sizeof(pwd));
+        sodium_memzero(pwd, strlen(pwd));
         return -1;
     }
 
@@ -29,12 +24,12 @@ int encrypt_file (const char *in_path, const char *out_path) {
             crypto_pwhash_ALG_ARGON2ID13) != 0){
 
         printf("Encryption Failed!\n");
-        sodium_memzero(pwd, sizeof(pwd));
+        sodium_memzero(pwd, strlen(pwd));
         sodium_free(plain);
         return -1;
     }
 
-    sodium_memzero(pwd, sizeof(pwd));
+    sodium_memzero(pwd, strlen(pwd));
 
     size_t clen = plen + crypto_aead_chacha20poly1305_ietf_ABYTES;
     unsigned char *cipher = sodium_malloc(clen);
