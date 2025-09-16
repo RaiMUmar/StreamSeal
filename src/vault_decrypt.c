@@ -74,14 +74,12 @@ int decrypt_file (const char *in_path, const char *out_path, char *pwd){
         return -1;
     }
 
-    if (write_file(out_path, plain, (size_t)real_plen) != 0) {
+    if (write_file(out_path, plain, (size_t)real_plen) != 1) {
         sodium_memzero(key, sizeof key);
         sodium_free(enc); 
         sodium_free(plain);
         return -1;
     }
-
-    printf("Decrypted %llu bytes.\n", real_plen);
 
     sodium_memzero(key, sizeof key); // scrub key material
     sodium_free(enc);

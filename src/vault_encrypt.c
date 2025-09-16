@@ -81,6 +81,4 @@ int encrypt_file (const char *in_path, const char *out_path, char *pwd) {
 
     rc = 1;
     return rc;
-
-    return 1;
 }
