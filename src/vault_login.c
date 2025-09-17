@@ -57,7 +57,6 @@ int login_user(char *pwd){
 
     int success = crypto_pwhash_str_verify((const char *)filebuf, pwd, strlen(pwd)); // Check if Password Matches
 
-    sodium_memzero(pwd, strlen(pwd));
     sodium_free(filebuf);
 
     if (success == 0){
@@ -74,5 +73,6 @@ int user_created(const char *path){
     if (fptr == NULL){
         return 0;
     }
+    fclose(fptr);
     return 1;
 }

@@ -66,7 +66,6 @@ int write_file(const char *path, const unsigned char *buf, size_t len){
     FILE* fptr = fopen(path, "wb"); // Open Binary File To Write
     if (fptr == NULL){
         printf("Could Not Open File!\n");
-        fclose(fptr);
         return -1;
     }
 
