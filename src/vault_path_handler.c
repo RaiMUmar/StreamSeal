@@ -9,8 +9,10 @@ int path_handler(encrypt_func f, const char *path, char *pwd, const char *suffix
     }
 
     if (S_ISREG(path_stat.st_mode)){    // It is a file
-        f(path, pwd, suffix);
-        return 1; 
+        if (f(path, pwd, suffix) != 0){
+            return -1;
+        }
+        return 0; 
 
     } else if (S_ISDIR(path_stat.st_mode)) {    // It is a folder
         DIR *dir = opendir(path); // Open Directory
@@ -28,10 +30,13 @@ int path_handler(encrypt_func f, const char *path, char *pwd, const char *suffix
             char full_path[1024];
             snprintf(full_path, sizeof(full_path), "%s/%s", path, entry->d_name);
             
-            path_handler(f, full_path, pwd, suffix);
+            if (path_handler(f, full_path, pwd, suffix) != 0){
+                closedir(dir);
+                return -1;
+            }
         }
     closedir(dir);
     }
 
-    return 1;
+    return 0;
 }

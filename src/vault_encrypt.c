@@ -4,7 +4,7 @@ int encrypt_file (const char *in_path, const char *out_path, char *pwd) {
     int rc = -1; // Assume Failure Unitil Success
 
     unsigned char *plain = NULL; size_t plen = 0;
-    if (read_file (in_path, &plain, &plen) != 1){
+    if (read_file (in_path, &plain, &plen) != 0){
         sodium_memzero(pwd, strlen(pwd));
         return -1;
     }
@@ -66,7 +66,7 @@ int encrypt_file (const char *in_path, const char *out_path, char *pwd) {
     memcpy(outbuf, &hdr, sizeof(hdr));
     memcpy(outbuf + sizeof(hdr), cipher, real_clen);
 
-    if (write_file(out_path, outbuf, total_out) != 1){
+    if (write_file(out_path, outbuf, total_out) != 0){
         sodium_memzero(key, sizeof(key));
         sodium_free(plain);
         sodium_free(cipher);
@@ -79,6 +79,6 @@ int encrypt_file (const char *in_path, const char *out_path, char *pwd) {
     sodium_free(cipher);
     sodium_free(outbuf);
 
-    rc = 1;
+    rc = 0;
     return rc;
 }

@@ -5,7 +5,7 @@ int decrypt_file (const char *in_path, const char *out_path, char *pwd){
     int rc = -1; // Assume Failure Until Success
 
     unsigned char *enc = NULL; size_t elen = 0;
-    if (read_file(in_path, &enc, &elen) != 1) { 
+    if (read_file(in_path, &enc, &elen) != 0) { 
         sodium_memzero(pwd, strlen(pwd)); 
         return -1; 
     }
@@ -74,7 +74,7 @@ int decrypt_file (const char *in_path, const char *out_path, char *pwd){
         return -1;
     }
 
-    if (write_file(out_path, plain, (size_t)real_plen) != 1) {
+    if (write_file(out_path, plain, (size_t)real_plen) != 0) {
         sodium_memzero(key, sizeof key);
         sodium_free(enc); 
         sodium_free(plain);
@@ -85,6 +85,6 @@ int decrypt_file (const char *in_path, const char *out_path, char *pwd){
     sodium_free(enc);
     sodium_free(plain);
 
-    rc = 1; // success
+    rc = 0; // success
     return rc;
 }

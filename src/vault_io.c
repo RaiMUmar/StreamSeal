@@ -56,7 +56,7 @@ int read_file (const char*path, unsigned char **buff, size_t *len){
 
     fclose(fptr);
     *len = numRead;
-    return 1; // Success
+    return 0; // Success
 }
 
 
@@ -78,7 +78,7 @@ int write_file(const char *path, const unsigned char *buf, size_t len){
     }
 
     fclose(fptr);
-    return 1; // Success
+    return 0; // Success
 }
 
 
@@ -108,5 +108,5 @@ int prompt_password(const char *label, char *out, size_t outsz, int confirm){
     }
     
     sodium_memzero(tmp, sizeof(tmp));
-    return 1; // Success
+    return 0; // Success
 }
