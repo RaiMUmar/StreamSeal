@@ -4,7 +4,7 @@ int encrypt_inplace(const char *in_path, char *pwd, const char *garbage) {
     if (!in_path || !pwd) return -1;
 
     char out_path[4096];
-    if (build_path(in_path, "", out_path, sizeof out_path) != 0) {
+    if (build_path(in_path, ".enc", out_path, sizeof out_path) != 0) {
         return -1;
     }
 

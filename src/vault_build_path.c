@@ -1,10 +1,6 @@
 #include "../include/header.h"
 
-int build_path(const char *in_path,
-                                                const char *suffix,
-                                                char *out_path,
-                                                size_t out_sz)
-{
+int build_path(const char *in_path, const char *suffix, char *out_path,size_t out_sz) {
     if (!in_path || !suffix || !out_path || out_sz == 0) return -1;
 
     const char *last_slash = strrchr(in_path, '/');

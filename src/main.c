@@ -32,7 +32,7 @@ int main(int argc, char **argv){
             in_path = argv[2];
 
             printf("Encrypting...\n");
-            return path_handler(encrypt_inplace, in_path, pwd, ".") == 0 ? 0 : 2;
+            return path_handler(encrypt_inplace, in_path, pwd, NULL) == 0 ? 0 : 2;
         } else {
             return -1;
         }

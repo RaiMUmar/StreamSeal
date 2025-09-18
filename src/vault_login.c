@@ -3,7 +3,7 @@
 /* Initialize New User */
 int init_user(void){
     const char *path = "user.pass"; // Initialize Path Variable
-    if (user_created(path)){
+    if (user_created(path) != 0){
         printf("User has already been initialized!\n");
         return 0;
     }
@@ -71,8 +71,8 @@ int login_user(char *pwd){
 int user_created(const char *path){
     FILE *fptr = fopen(path, "rb");
     if (fptr == NULL){
-        return -1;
+        return 0;
     }
     fclose(fptr);
-    return 0;
+    return -1;
 }
