@@ -34,3 +34,5 @@ int decrypt_inplace(const char *in_path, char *pwd, const char *wanted_ext);
 int encrypt_inplace(const char *in_path, char *pwd, const char *garbage);
 int build_path(const char *in_path, const char *suffix, char *out_path, size_t out_sz);
 int safe_delete(const char *path);
+int ends_with(const char *s, const char *suffix);
+const char *base_name(const char *path);
