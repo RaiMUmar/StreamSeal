@@ -6,6 +6,8 @@
 #include <errno.h>
 #include <sys/stat.h> 
 #include <dirent.h>
+#include <termios.h>
+#include <fcntl.h>
 
 static const uint8_t MAGIC[6] = { 'S','I','M','P','L','1' };
 

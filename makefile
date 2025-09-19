@@ -2,8 +2,8 @@ PKGCONF ?= pkg-config
 CFLAGS_COMMON = -std=c99 -Wall -pedantic $(shell $(PKGCONF) --cflags libsodium)
 LDFLAGS = $(shell $(PKGCONF) --libs libsodium)
 
-vault: main.o vault_decrypt.o vault_encrypt.o vault_io.o vault_login.o vault_print_hex.o vault_usage.o vault_path_handler.o vault_decrypt_inplace.o vault_encrypt_inplace.o vault_delete.o vault_build_path.o vault_util.o
-	clang ./vault_util.o ./vault_build_path.o ./vault_delete.o ./vault_encrypt_inplace.o ./vault_decrypt_inplace.o ./vault_path_handler.o ./main.o ./vault_decrypt.o ./vault_encrypt.o ./vault_io.o ./vault_login.o ./vault_print_hex.o ./vault_usage.o $(LDFLAGS) -o bin/vault
+vault: main.o vault_decrypt.o vault_encrypt.o vault_io.o vault_login.o vault_print_hex.o vault_usage.o vault_path_handler.o vault_decrypt_inplace.o vault_encrypt_inplace.o vault_delete.o vault_build_path.o vault_util.o vault_prompt_password.o
+	clang ./vault_prompt_password.o ./vault_util.o ./vault_build_path.o ./vault_delete.o ./vault_encrypt_inplace.o ./vault_decrypt_inplace.o ./vault_path_handler.o ./main.o ./vault_decrypt.o ./vault_encrypt.o ./vault_io.o ./vault_login.o ./vault_print_hex.o ./vault_usage.o $(LDFLAGS) -o bin/vault
 
 vault_path_handler.o: ./src/vault_path_handler.c 
 	clang $(CFLAGS_COMMON) -I./include ./src/vault_path_handler.c -c
@@ -43,6 +43,9 @@ vault_decrypt_inplace.o: ./src/vault_decrypt_inplace.c
 
 vault_util.o: ./src/vault_util.c
 	clang $(CFLAGS_COMMON) -I./include ./src/vault_util.c -c
+
+vault_prompt_password.o: ./src/vault_prompt_password.c
+	clang $(CFLAGS_COMMON) -I./include ./src/vault_prompt_password.c -c
 
 clean:
 	rm -f *.o *.pass bin/vault
