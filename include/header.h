@@ -20,6 +20,7 @@ typedef struct {
 typedef int (*encrypt_func)(const char*, char*, const char*);
 
 
+int main(int argc, char **argv);
 int decrypt_file (const char *in_path, const char *out_path, char *pwd);
 int encrypt_file (const char *in_path, const char *out_path, char *pwd);
 int read_file (const char*path, unsigned char **buff, size_t *len);
