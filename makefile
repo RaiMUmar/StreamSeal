@@ -74,4 +74,5 @@ test: $(TESTS)
 
 .PHONY: clean
 clean:
-	rm -f *.o *.pass $(BIN_DIR)/vault $(BIN_DIR)/test_* 
+	rm -f *.o *.pass $(BIN_DIR)/vault
+	rm -rf $(BIN_DIR)/test_* $(BIN_DIR)/*.dSYM
