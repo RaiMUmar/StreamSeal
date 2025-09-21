@@ -71,6 +71,11 @@ test: $(TESTS)
 	@set -e; for t in $(TESTS); do echo ">>> $$t"; "$$t"; done; echo "OK"
 
 
+ifeq ($(SAN),asan)
+  CFLAGS += -fsanitize=address,undefined -fno-omit-frame-pointer
+  LDFLAGS += -fsanitize=address,undefined
+endif
+
 
 .PHONY: clean
 clean:
