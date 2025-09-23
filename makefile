@@ -1,8 +1,8 @@
-CC ?= clang
+CC ?= clang  
 PKGCONF ?= pkg-config
 CFLAGS_COMMON = -std=c99 -Wall -pedantic -g $(shell $(PKGCONF) --cflags libsodium)
 LDFLAGS = $(shell $(PKGCONF) --libs libsodium)
-
+RUNS ?= 1000
 BIN_DIR := bin
 
 vault: main.o vault_decrypt.o vault_encrypt.o vault_io.o vault_login.o vault_print_hex.o \
@@ -89,8 +89,23 @@ cppcheck:
 codespell:
 	codespell -S .git,bin,obj -q 3 -L clen
 
+FUZZ_CFLAGS  = -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer
+FUZZ_LDFLAGS = -fsanitize=address,undefined
+
+$(BIN_DIR)/fuzz_smoke: tests/fuzz_smoke.c src/vault_decrypt.c src/vault_io.c src/vault_util.c
+	@mkdir -p $(BIN_DIR)
+	$(CC) -std=c99 $(FUZZ_CFLAGS) -I./include \
+	      $(shell $(PKGCONF) --cflags libsodium) \
+	      $^ \
+	      $(shell $(PKGCONF) --libs libsodium) $(FUZZ_LDFLAGS) \
+	      -o $@
+
+.PHONY: fuzz-smoke
+fuzz-smoke: $(BIN_DIR)/fuzz_smoke
+	@echo ">>> fuzz smoke ($(RUNS) runs)"
+	@MallocNanoZone=0 $(BIN_DIR)/fuzz_smoke -runs=$(RUNS)
 
 .PHONY: clean
 clean:
-	rm -f *.o *.pass $(BIN_DIR)/vault
-	rm -rf $(BIN_DIR)/test_* $(BIN_DIR)/*.dSYM
+	rm -f *.o *.pass
+	rm -rf $(BIN_DIR)

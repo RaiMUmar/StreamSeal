@@ -1,3 +1,10 @@
+#ifndef HEADER_H
+#define HEADER_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <sodium.h>
 #include <stdlib.h> 
@@ -37,3 +44,10 @@ int build_path(const char *in_path, const char *suffix, char *out_path, size_t o
 int safe_delete(const char *path);
 int ends_with(const char *s, const char *suffix);
 const char *base_name(const char *path);
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
