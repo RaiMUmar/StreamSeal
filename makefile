@@ -82,6 +82,13 @@ endif
 test: $(TESTS)
 	@set -e; for t in $(TESTS); do echo ">>> $$t"; $(TEST_ENV) "$$t"; done; echo "OK"
 
+.PHONY: cppcheck codespell
+cppcheck:
+	cppcheck --enable=warning,performance,portability --std=c11 --quiet src include
+
+codespell:
+	codespell -S .git,bin,obj -q 3 -L clen
+
 
 .PHONY: clean
 clean:
