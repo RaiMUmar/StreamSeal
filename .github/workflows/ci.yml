@@ -1,0 +1,49 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        san: [none, asan]
+    runs-on: ${{ matrix.os }}
+
+    # Helps ASan on macOS behave; your Makefile already uses this for tests.
+    env:
+      MallocNanoZone: ${{ matrix.os == 'macos-latest' && matrix.san == 'asan' && '0' || '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang pkg-config libsodium-dev cppcheck codespell
+
+      - name: Install deps (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          brew install pkg-config libsodium cppcheck codespell
+          # ensure pkg-config can find libsodium (usually not needed, but safe)
+          echo "PKG_CONFIG_PATH=$(brew --prefix libsodium)/lib/pkgconfig" >> $GITHUB_ENV
+
+      - name: Build
+        run: |
+          if [ "${{ matrix.san }}" = "asan" ]; then SAN=asan make -j; else make -j; fi
+
+      - name: Unit tests
+        run: |
+          if [ "${{ matrix.san }}" = "asan" ]; then SAN=asan make test; else make test; fi
+
+      - name: Static analysis
+        run: |
+          make cppcheck
+          make codespell
+
+      - name: Fuzz smoke
+        run: |
+          if [ "${{ matrix.san }}" = "asan" ]; then SAN=asan make fuzz-smoke; else make fuzz-smoke; fi
