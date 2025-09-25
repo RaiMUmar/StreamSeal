@@ -1,7 +1,6 @@
-# Vault — Minimal, Auditable File Encryption (Argon2id → ChaCha20‑Poly1305)
+# StreamSeal — Minimal, Auditable File Encryption (Argon2id → ChaCha20‑Poly1305)
 
 [![CI](https://img.shields.io/github/actions/workflow/status/RaiMUmar/StreamSeal/ci.yml?label=CI&logo=github)](https://github.com/RaiMUmar/StreamSeal/actions)
-[![CodeQL](https://img.shields.io/github/actions/workflow/status/RaiMUmar/StreamSeal/codeql.yml?label=CodeQL&logo=github)](https://github.com/RaiMUmar/StreamSeal/actions?query=workflow%3ACodeQL)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![C99](https://img.shields.io/badge/C-99-00599C?logo=c&logoColor=white)
 
@@ -103,8 +102,7 @@ Each encrypted file is:
 - **GitHub Actions**: macOS + Ubuntu matrix
 
 CI badges above assume:
-- CI workflow file (e.g., `.github/workflows/ci.yml`) — update `<WORKFLOW_FILE>` as needed
-- Optional CodeQL scanning file at `.github/workflows/codeql.yml`
+- CI workflow file (e.g., `.github/workflows/ci.yml`)
 
 ---
 
@@ -172,6 +170,6 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE).
 
 ---
 
-## 📊 Changelog (excerpt)
+## 📊 Changelog
 
 - **v1.0** — Initial public release: AEAD with ChaCha20‑Poly1305 (IETF), Argon2id KDF, recursive encrypt/decrypt, tests, and CI.
