@@ -1,4 +1,3 @@
-// tests/fuzz_smoke.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
