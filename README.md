@@ -1,21 +1,19 @@
-# StreamSeal — Minimal, Auditable File Encryption (Argon2id → ChaCha20‑Poly1305)
+# StreamSeal — Minimal, Auditable File Encryption (Argon2id → ChaCha20-Poly1305 / Secretstream) — v2
 
 [![CI](https://img.shields.io/github/actions/workflow/status/RaiMUmar/StreamSeal/ci.yml?label=CI&logo=github)](https://github.com/RaiMUmar/StreamSeal/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![C99](https://img.shields.io/badge/C-99-00599C?logo=c&logoColor=white)
 
-> A cross‑platform CLI that encrypts/decrypts files and folders using **Argon2id key‑derivation** and **ChaCha20‑Poly1305 (IETF)** AEAD.
-> Built for clarity and correctness first: small codebase, unit tests, fuzz smoke, and GitHub Actions CI (macOS + Ubuntu).
+> A cross-platform CLI that encrypts/decrypts files and folders using **Argon2id** (KDF) and **ChaCha20-Poly1305**.  
+> v2 adds **streamed encryption** via libsodium **secretstream** (constant-memory), **opt-in deletion**, **atomic 0600 writes** for credentials, **symlink/device skipping**, and **corruption tests** — all with a small, auditable C codebase.
 
 ---
 
 ## ✨ Why this exists
 
 - **Practical**: one binary, simple commands: `init-user`, `encrypt`, `decrypt`.
-- **Secure defaults** (crypto): Argon2id → ChaCha20‑Poly1305, authenticated encryption.
-- **Readable**: short C code with tests, static analysis, sanitizers, and a documented threat model.
-
-> **Note:** Current implementation uses whole‑file I/O (reads the full file into memory). Streaming/chunked I/O is on the roadmap.
+- **Secure defaults**: Argon2id + authenticated encryption; header bound as AAD in v2.
+- **Readable**: small C codebase, unit tests, corruption tests, fuzz smoke, sanitizers, CI.
 
 ---
 
@@ -23,19 +21,25 @@
 
 ```bash
 # 1) Build
-make            # or: SAN=asan make test   (address/UB sanitizers)
+make              # or: SAN=asan make test   (address/UB sanitizers)
 
-# 2) Initialize credentials (writes ./user.pass)
+# 2) Initialize credentials (writes ./user.pass with 0600, atomically)
 ./bin/vault init-user
 
-# 3) Encrypt a file (creates <name>.enc, removes plaintext on success)
-./bin/vault encrypt path/to/plain.txt
+# 3) Encrypt a file (streaming). Non-destructive by default.
+./bin/vault encrypt path/to/plain.txt            # writes path/to/plain.enc
+./bin/vault encrypt path/to/dir                  # recursive; skips symlinks/devices
+./bin/vault encrypt path/to/plain.txt --rm       # also deletes plaintext on success
 
-# 4) Decrypt (creates <name>.dec by default, removes .enc on success)
-./bin/vault decrypt path/to/plain.enc .dec
+# 4) Decrypt (streaming). Non-destructive by default.
+./bin/vault decrypt path/to/plain.enc            # writes path/to/plain.dec
+./bin/vault decrypt path/to/plain.enc .out --rm  # custom suffix; delete .enc on success
 ```
 
-**Important:** By default this tool deletes the source file on success (plaintext after encrypt; ciphertext after decrypt). This is intentional for minimal “vault‑style” flows but can be surprising. If you prefer a non‑destructive flow, duplicate your data or adapt the code path (see _Design & Flags_).
+**Notes**
+- **Deletion is now opt-in** (`--rm` or `--delete`). Without it, sources are preserved.
+- **Symlinks and special files** (devices/FIFOs/sockets) are **skipped**; directories recurse.
+- `user.pass` is written **atomically** with final permissions **0600**; perms are tightened on login if needed.
 
 ---
 
@@ -43,117 +47,131 @@ make            # or: SAN=asan make test   (address/UB sanitizers)
 
 **In scope**
 
-- Confidentiality & integrity of file contents against an attacker who obtains the encrypted files but **not** your password.
-- Strong password hashing with **Argon2id** (moderate limits) and authenticated encryption with **ChaCha20‑Poly1305 (IETF)**.
-- Tamper detection of ciphertext (decryption fails if modified).
+- Confidentiality & integrity of file contents against an attacker with ciphertext but **without** your password.
+- Strong password hashing with **Argon2id** (libsodium moderate limits).
+- **v2 streamed format:** header fields (magic, version, KDF params, salt) are **bound as AAD**; tampering causes decryption failure.
 
 **Out of scope / limitations**
 
 - **Filenames, sizes, and directory structure are visible** (metadata leakage).
-- **No secure deletion**: `remove()` unlinks only; content may remain recoverable on disk/FS.
-- **Whole‑file I/O**: large files require enough RAM to hold the entire content.
-- **Active malware or compromised host** at encryption/decryption time.
-- Side channels (timing, memory access patterns) and keylogging are not addressed.
-- Key rotation and multi‑user sharing are not implemented.
+- **No secure deletion**: `remove()` unlinks only; data may be recoverable on some filesystems.
+- Active malware/compromised host when you run the tool; keylogging/side-channels.
+- Key rotation, file sharing, multi-user policies.
 
 ---
 
-## 🧱 File format & header diagram
+## 🧱 File formats
 
-Each encrypted file is:
+### v2 — **Streaming format** (default)
+
+```
++--------------------+-------------------------------+
+| stream_hdr_t       |  Secretstream ciphertext ...  |
+|  (bound as AAD)    |  (chunked, final tag)         |
++--------------------+-------------------------------+
+```
+
+**`stream_hdr_t` overview**
+
+| Field               | Size                         | Purpose                                   |
+|---------------------|------------------------------|-------------------------------------------|
+| `magic`             | 6 bytes                      | format ID (v2)                            |
+| `version`           | 4 bytes (u32)                | format version                            |
+| `kdf_mem_kib`       | 4 bytes (u32)                | Argon2id mem limit (KiB)                  |
+| `kdf_opslimit`      | 4 bytes (u32)                | Argon2id ops limit                        |
+| `salt`              | 16 bytes                     | KDF salt                                  |
+| `ss_header`         | 24 bytes (libsodium constant)| secretstream header                       |
+
+> The **AAD** is the header **up to** (but not including) `ss_header`, so magic/version/KDF params/salt are cryptographically bound.
+
+**Why streaming?**
+- Constant memory usage for large files.
+- Early tamper detection; decryption fails if any chunk is corrupted.
+
+### v1 — Legacy simple format (still decryptable)
 
 ```
 +--------------------+---------------------------+
-| simple_hdr_t (34B) |  ChaCha20-Poly1305 blob  |
+| simple_hdr_t       |  AEAD ciphertext blob     |
 +--------------------+---------------------------+
 ```
 
-### `simple_hdr_t` (packed for clarity)
-
-| Field          | Bytes | Description                                     |
-|----------------|------:|-------------------------------------------------|
-| `magic`        |     6 | ASCII `"SIMPL1"` to identify the format         |
-| `salt`         |    16 | Random salt for Argon2id                        |
-| `nonce`        |    12 | Unique nonce for ChaCha20‑Poly1305 (IETF)       |
-
-> Integrity is provided by AEAD; header is validated by `magic`, but (in this version) **not cryptographically bound as AAD**. See Roadmap for AAD‑bound, versioned headers.
+- Still supported on **decrypt** for backward compatibility.
+- v2 is preferred for new data.
 
 ---
 
-## 🔑 KDF & crypto parameters (current)
+## 🔑 KDF & crypto parameters
 
-- **KDF**: `crypto_pwhash` with **Argon2id** (`crypto_pwhash_ALG_ARGON2ID13`)
-  - Ops/memory: `OPSLIMIT_MODERATE`, `MEMLIMIT_MODERATE` (libsodium defaults)
-- **AEAD**: `crypto_aead_chacha20poly1305_ietf_*`
-  - Nonce: 12 bytes from `randombytes_buf` (per file)
-  - Auth tag: 16 bytes appended by libsodium
-- **Zeroization**: Sensitive buffers (`key`, `pwd`) are wiped with `sodium_memzero`
+- **KDF**: libsodium `crypto_pwhash` (Argon2id, `ALG_ARGON2ID13`)
+  - Ops/memory: `OPSLIMIT_MODERATE`, `MEMLIMIT_MODERATE`
+  - v2 records **KDF params** in the header; decrypt uses those exact values.
+- **AEAD/stream**: `crypto_secretstream_xchacha20poly1305`
+  - Per-file random salt; per-stream `ss_header`
+  - Final chunk carries a **FINAL** tag
+- **Zeroization**: `sodium_memzero` on password and derived keys
 
-> Tune KDF limits for your hardware if needed. Future versions may record KDF params in the header.
+---
+
+## 🛠️ CLI behavior & flags
+
+**Commands**
+- `init-user` — create `user.pass` with Argon2id hash (atomic, 0600)
+- `encrypt <path> [--rm|--delete]` — file or directory (recursive); writes `<name>.enc`
+- `decrypt <path> [suffix] [--rm|--delete]` — writes `<base><suffix>` (default `.dec`)
+
+**Behavior**
+- **Opt-in delete**: add `--rm` to remove sources on success.
+- **Symlinks/devices**: **skipped**. Directories recurse. `user.pass` is never processed.
+- Decrypt auto-detects format (v2 streaming vs v1 simple) by header magic.
 
 ---
 
 ## 🧪 Tests & CI
 
-- **Unit tests** for path building and encrypt/decrypt round‑trip
-- **Fuzz smoke** target that feeds random bytes into the decryptor (should not crash)
-- **Sanitizers**: Address + Undefined behavior
+- **Unit tests**: path building, round-trip (encrypt/decrypt)
+- **Corruption tests**: header and payload tamper → decryption fails; quiet logs
+- **Fuzz smoke**: random inputs into decryptor (no crashes)
 - **Static analysis**: `cppcheck`, `codespell`
-- **GitHub Actions**: macOS + Ubuntu matrix
+- **Sanitizers**: Address/UB
+- **CI**: GitHub Actions matrix (macOS + Ubuntu)
 
-CI badges above assume:
-- CI workflow file (e.g., `.github/workflows/ci.yml`)
-
----
-
-## 🛠️ Design & flags (CLI)
-
-**Commands**
-
-- `init-user` — creates `user.pass` containing Argon2id hash of your password
-- `encrypt <path>` — encrypt file or folder (recursive) → writes `<name>.enc` by default
-- `decrypt <path> [suffix]` — decrypt file → writes `<base><suffix>` (default `.dec`)
-
-**Behavior**
-
-- On **success**, source file is removed (plaintext after encrypt, ciphertext after decrypt).
-- Special files: currently regular files are processed; folders are recursed. `user.pass` and certain suffixes may be skipped by policy.
-
-**Planned flags (roadmap)**
-
-- `--rm` (opt‑in deletion), `--dry-run`, `--pass-file`, `--pass-env`, `--verbose`
+Run locally:
+```bash
+make test                    # builds and runs all tests
+SAN=asan make test           # with sanitizers
+```
 
 ---
 
-## 🚧 Limitations & future work
+## 🚧 Roadmap
 
-- **Streaming/chunked I/O** via `crypto_secretstream_xchacha20poly1305` (constant memory)
-- **AAD‑bound, versioned headers** (bind header fields; store KDF params)
-- **Non‑destructive default** (make deletion opt‑in)
-- **Symlink/device handling** hardening
-- Optional **archive mode** to hide filenames/structure
+- **Archive/“zip-like” mode**: pack folders into a single stream to **hide filenames/structure** (e.g., tar-style stream + encryption).
+- Passphrase sources: `--pass-file`, `--pass-env`, `--pass-fd`
+- Non-interactive mode, better exit codes, verbose logging
+- Secure-delete adapters (best-effort, clearly documented caveats)
+- Key rotation tooling
 
 ---
 
 ## 📦 Building
 
 ```bash
-# Dependencies: libsodium, clang (or gcc), make, pkg-config
+# Dependencies: libsodium, clang/gcc, make, pkg-config
 # macOS:  brew install libsodium pkg-config
 # Ubuntu: sudo apt-get install -y clang pkg-config libsodium-dev
 
-make            # build all
-make test       # unit tests + fuzz smoke
-SAN=asan make   # with ASan/UBSan
+make
+make test
 ```
 
 ---
 
 ## 🔐 Security notes
 
-- Choose a **strong, unique password**. Password is never stored; only Argon2id hash.
-- `user.pass` permissions should be **0600**; atomic write is recommended in code.
-- Secure deletion is **not** provided by default; use external tools if needed and understand FS caveats.
+- Use a **strong, unique passphrase**. Only the Argon2id hash is stored (`user.pass`).
+- `user.pass` is written **atomically** and should remain **0600**.
+- There is **no secure deletion**. If you must wipe contents, research and use OS/FS-appropriate tools (with caveats).
 
 ---
 
@@ -163,13 +181,13 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE).
 
 ---
 
-## 🙌 Acknowledgements
-
-- [libsodium](https://github.com/jedisct1/libsodium) — modern, easy‑to‑use crypto
-- AEAD design inspired by best practices in libsodium docs
-
----
-
 ## 📊 Changelog
 
-- **v1.0** — Initial public release: AEAD with ChaCha20‑Poly1305 (IETF), Argon2id KDF, recursive encrypt/decrypt, tests, and CI.
+- **v2.0**
+  - **Streaming encryption/decryption** (secretstream, constant memory, header AAD-bound)
+  - **Opt-in deletion** via `--rm`/`--delete`
+  - **Atomic 0600** write for `user.pass`; permission tightening on login
+  - **Skip symlinks/devices**; don’t follow symlinks
+  - **Corruption tests** added; tests output “All Tests Passed!” on success
+- **v1.0**
+  - Initial public release: AEAD with ChaCha20-Poly1305 (IETF), Argon2id KDF, recursive encrypt/decrypt, tests, and CI.

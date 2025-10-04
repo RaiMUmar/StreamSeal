@@ -1,11 +1,19 @@
 #include "../include/header.h"
 
-/* Shows Available Commands to User */
+/* usage: print CLI help/usage summary, options, and notes to stderr.
+   `prog` should be argv[0] so the help shows the correct executable name. */
 void usage(const char *prog) {
-    fprintf(stderr,
+    fprintf(stderr,  // print a multi-line formatted usage message
         "Usage:\n"
-        " %s init-user\n"
-        " %s encrypt <plain>\n"
-        " %s decrypt <cipher> <suffix>\n",
-        prog, prog, prog);
+        "  %s init-user\n"
+        "  %s encrypt <path> [--rm]\n"
+        "  %s decrypt <path> [suffix] [--rm]\n"
+        "\n"
+        "Options:\n"
+        "  --rm, --delete   Remove source on success (opt-in)\n"
+        "\n"
+        "Notes:\n"
+        "  • Symlinks and special files (devices, fifos, sockets) are skipped.\n",
+        prog, prog, prog); // substitute executable name in all lines
 }
+

@@ -1,76 +1,79 @@
-CC ?= clang  
+CC ?= clang
 PKGCONF ?= pkg-config
-CFLAGS_COMMON = -std=c99 -Wall -pedantic -g $(shell $(PKGCONF) --cflags libsodium)
-LDFLAGS = $(shell $(PKGCONF) --libs libsodium)
-RUNS ?= 1000
+
+# Dirs
+SRC_DIR := src
+INC_DIR := include
+OBJ_DIR := obj
 BIN_DIR := bin
 
-vault: main.o vault_decrypt.o vault_encrypt.o vault_io.o vault_login.o vault_print_hex.o \
-       vault_usage.o vault_path_handler.o vault_decrypt_inplace.o vault_encrypt_inplace.o \
-       vault_delete.o vault_build_path.o vault_util.o vault_prompt_password.o
+RUNS ?= 1000
+
+# Common flags
+CFLAGS_COMMON = -std=c99 -Wall -pedantic -g $(shell $(PKGCONF) --cflags libsodium) -I./$(INC_DIR)
+LDFLAGS      = $(shell $(PKGCONF) --libs libsodium)
+
+# Source files for the main binary
+SRC_FILES := \
+  main.c \
+  vault_decrypt.c \
+  vault_encrypt.c \
+  vault_io.c \
+  vault_login.c \
+  vault_print_hex.c \
+  vault_usage.c \
+  vault_path_handler.c \
+  vault_decrypt_inplace.c \
+  vault_encrypt_inplace.c \
+  vault_delete.c \
+  vault_build_path.c \
+  vault_util.c \
+  vault_prompt_password.c \
+  vault_stream.c \
+  vault_globals.c
+
+SRCS := $(addprefix $(SRC_DIR)/,$(SRC_FILES))
+OBJS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
+DEPS := $(OBJS:.o=.d)
+
+# Default target
+all: $(BIN_DIR)/vault
+
+# Build the main binary from obj files
+$(BIN_DIR)/vault: | $(BIN_DIR) $(OBJ_DIR) $(OBJS)
+	$(CC) $(OBJS) $(LDFLAGS) -o $@
+
+# Pattern rule: any .c in src -> .o in obj (with dep files)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+	$(CC) $(CFLAGS_COMMON) -MMD -MP -c $< -o $@
+
+# Ensure directories exist
+$(OBJ_DIR):
+	@mkdir -p $(OBJ_DIR)
+
+$(BIN_DIR):
 	@mkdir -p $(BIN_DIR)
-	$(CC) ./vault_prompt_password.o ./vault_util.o ./vault_build_path.o \
-	      ./vault_delete.o ./vault_encrypt_inplace.o ./vault_decrypt_inplace.o \
-	      ./vault_path_handler.o ./main.o ./vault_decrypt.o ./vault_encrypt.o \
-	      ./vault_io.o ./vault_login.o ./vault_print_hex.o ./vault_usage.o \
-	      $(LDFLAGS) -o $(BIN_DIR)/vault
 
-vault_path_handler.o: ./src/vault_path_handler.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/vault_path_handler.c -c
+# ---- Tests ----
+TESTS := $(BIN_DIR)/test_build_path $(BIN_DIR)/test_roundtrip $(BIN_DIR)/test_corruption
 
-main.o: ./src/main.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/main.c -c
+$(BIN_DIR)/test_build_path: tests/test_build_path.c $(SRC_DIR)/vault_build_path.c
+	@mkdir -p $(BIN_DIR)
+	$(CC) $(CFLAGS_COMMON) $^ $(LDFLAGS) -o $@
 
-vault_decrypt.o: ./src/vault_decrypt.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/vault_decrypt.c -c
-
-vault_encrypt.o: ./src/vault_encrypt.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/vault_encrypt.c -c
-
-vault_io.o: ./src/vault_io.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/vault_io.c -c
-
-vault_login.o: ./src/vault_login.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/vault_login.c -c
-
-vault_print_hex.o: ./src/vault_print_hex.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/vault_print_hex.c -c
-
-vault_usage.o: ./src/vault_usage.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/vault_usage.c -c
-
-vault_build_path.o: ./src/vault_build_path.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/vault_build_path.c -c
-
-vault_delete.o: ./src/vault_delete.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/vault_delete.c -c
-
-vault_encrypt_inplace.o: ./src/vault_encrypt_inplace.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/vault_encrypt_inplace.c -c
-
-vault_decrypt_inplace.o: ./src/vault_decrypt_inplace.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/vault_decrypt_inplace.c -c
-
-vault_util.o: ./src/vault_util.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/vault_util.c -c
-
-vault_prompt_password.o: ./src/vault_prompt_password.c
-	$(CC) $(CFLAGS_COMMON) -I./include ./src/vault_prompt_password.c -c
-
-
-TESTS := $(BIN_DIR)/test_build_path $(BIN_DIR)/test_roundtrip
-
-$(BIN_DIR)/test_build_path: tests/test_build_path.c src/vault_build_path.c
+$(BIN_DIR)/test_corruption: tests/test_corruption.c \
+                           src/vault_stream.c src/vault_io.c src/vault_util.c
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS_COMMON) -I./include $^ $(LDFLAGS) -o $@
 
+# Include vault_stream.c because encrypt/decrypt_inplace use streaming now
 $(BIN_DIR)/test_roundtrip: tests/test_roundtrip.c \
-                           src/vault_encrypt_inplace.c src/vault_decrypt_inplace.c \
-                           src/vault_encrypt.c src/vault_decrypt.c src/vault_io.c \
-                           src/vault_build_path.c src/vault_delete.c src/vault_util.c
+                           $(SRC_DIR)/vault_encrypt_inplace.c $(SRC_DIR)/vault_decrypt_inplace.c \
+                           $(SRC_DIR)/vault_encrypt.c $(SRC_DIR)/vault_decrypt.c $(SRC_DIR)/vault_io.c \
+                           $(SRC_DIR)/vault_build_path.c $(SRC_DIR)/vault_delete.c $(SRC_DIR)/vault_util.c \
+                           $(SRC_DIR)/vault_stream.c $(SRC_DIR)/vault_globals.c
 	@mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS_COMMON) -I./include $^ $(LDFLAGS) -o $@
-
+	$(CC) $(CFLAGS_COMMON) $^ $(LDFLAGS) -o $@
 
 ifeq ($(SAN),asan)
   CFLAGS_COMMON += -fsanitize=address,undefined -fno-omit-frame-pointer
@@ -80,21 +83,22 @@ endif
 
 .PHONY: test
 test: $(TESTS)
-	@set -e; for t in $(TESTS); do echo ">>> $$t"; $(TEST_ENV) "$$t"; done; echo "OK"
+	@set -e; for t in $(TESTS); do echo ">>> $$t"; $(TEST_ENV) "$$t"; done; printf "\033[1;32mAll Tests Passed!\033[0m\n"
 
 .PHONY: cppcheck codespell
 cppcheck:
-	cppcheck --enable=warning,performance,portability --std=c11 --quiet src include
+	cppcheck --enable=warning,performance,portability --std=c11 --quiet $(SRC_DIR) $(INC_DIR)
 
 codespell:
-	codespell -S .git,bin,obj -q 3 -L clen
+	codespell -S .git,$(BIN_DIR),$(OBJ_DIR) -q 3 -L clen
 
+# ---- Fuzz smoke ----
 FUZZ_CFLAGS  = -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer
 FUZZ_LDFLAGS = -fsanitize=address,undefined
 
-$(BIN_DIR)/fuzz_smoke: tests/fuzz_smoke.c src/vault_decrypt.c src/vault_io.c src/vault_util.c
+$(BIN_DIR)/fuzz_smoke: tests/fuzz_smoke.c $(SRC_DIR)/vault_decrypt.c $(SRC_DIR)/vault_io.c $(SRC_DIR)/vault_util.c
 	@mkdir -p $(BIN_DIR)
-	$(CC) -std=c99 $(FUZZ_CFLAGS) -I./include \
+	$(CC) -std=c99 $(FUZZ_CFLAGS) -I./$(INC_DIR) \
 	      $(shell $(PKGCONF) --cflags libsodium) \
 	      $^ \
 	      $(shell $(PKGCONF) --libs libsodium) $(FUZZ_LDFLAGS) \
@@ -107,5 +111,9 @@ fuzz-smoke: $(BIN_DIR)/fuzz_smoke
 
 .PHONY: clean
 clean:
-	rm -f *.o *.pass
-	rm -rf $(BIN_DIR)
+	rm -f $(OBJ_DIR)/*.o $(OBJ_DIR)/*.d *.pass
+	rm -rf $(BIN_DIR) $(OBJ_DIR)
+
+# Include auto-generated dependency files
+-include $(DEPS)
+

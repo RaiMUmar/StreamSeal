@@ -15,6 +15,10 @@ extern "C" {
 #include <dirent.h>
 #include <termios.h>
 #include <fcntl.h>
+#include <limits.h>
+#include <unistd.h>
+#include <stddef.h> 
+#include <assert.h>
 
 static const uint8_t MAGIC[6] = { 'S','I','M','P','L','1' };
 
@@ -23,6 +27,19 @@ typedef struct {
     unsigned char salt[16];
     unsigned char nonce[12];
 } simple_hdr_t;
+
+#define STREAMSEAL_VERSION 1
+#define STREAM_CHUNK (64 * 1024)
+static const uint8_t STREAM_MAGIC[6] = { 'S','E','A','L','v','1' };
+
+typedef struct {
+    uint8_t  magic[6];   /* "SEALv1" */
+    uint16_t version;    /* STREAMSEAL_VERSION */
+    uint32_t kdf_mem_kib;   /* Argon2id mem limit used (KiB) */
+    uint32_t kdf_opslimit;  /* Argon2id ops limit used */
+    unsigned char salt[16]; /* Argon2id salt */
+    unsigned char ss_header[crypto_secretstream_xchacha20poly1305_HEADERBYTES]; /* secretstream header */
+} stream_hdr_t;
 
 typedef int (*encrypt_func)(const char*, char*, const char*);
 
@@ -44,7 +61,13 @@ int build_path(const char *in_path, const char *suffix, char *out_path, size_t o
 int safe_delete(const char *path);
 int ends_with(const char *s, const char *suffix);
 const char *base_name(const char *path);
+int write_file_atomic_0600(const char *path, const unsigned char *buf, size_t len);
+int encrypt_file_stream(const char *in_path, const char *out_path, char *pwd);
+int decrypt_file_stream(const char *in_path, const char *out_path, char *pwd);
+int read_magic(const char *p, unsigned char out[6]);
 
+
+extern int g_delete_on_success;
 
 #ifdef __cplusplus
 }
