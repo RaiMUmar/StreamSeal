@@ -47,7 +47,7 @@ make              # or: SAN=asan make test   (address/UB sanitizers)
 
 **In scope**
 
-- Confidentiality & integrity of file contents against an attacker with ciphertext but **without** your password.
+- Confidentiality & integrity of file contents against an attacker.
 - Strong password hashing with **Argon2id** (libsodium moderate limits).
 - **v2 streamed format:** header fields (magic, version, KDF params, salt) are **bound as AAD**; tampering causes decryption failure.
 
@@ -146,7 +146,7 @@ SAN=asan make test           # with sanitizers
 
 ## 🚧 Roadmap
 
-- **Archive/“zip-like” mode**: pack folders into a single stream to **hide filenames/structure** (e.g., tar-style stream + encryption).
+- **Archive mode**: pack folders into a single stream to **hide filenames/structure** (e.g., tar-style stream + encryption).
 - Passphrase sources: `--pass-file`, `--pass-env`, `--pass-fd`
 - Non-interactive mode, better exit codes, verbose logging
 - Secure-delete adapters (best-effort, clearly documented caveats)
