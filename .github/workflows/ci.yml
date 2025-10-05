@@ -1,5 +1,7 @@
 name: CI
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
 
 jobs:
   build-test:
@@ -10,8 +12,8 @@ jobs:
         san: [none, asan]
     runs-on: ${{ matrix.os }}
 
-    # Helps ASan on macOS behave; your Makefile already uses this for tests.
     env:
+      # Helps ASan on macOS behave; your Makefile already respects SAN=asan
       MallocNanoZone: ${{ matrix.os == 'macos-latest' && matrix.san == 'asan' && '0' || '' }}
 
     steps:
@@ -21,14 +23,15 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang pkg-config libsodium-dev cppcheck codespell
+          sudo apt-get install -y build-essential clang make pkg-config \
+                                  libsodium-dev cppcheck codespell
 
       - name: Install deps (macOS)
         if: matrix.os == 'macos-latest'
         run: |
           brew update
           brew install pkg-config libsodium cppcheck codespell
-          # ensure pkg-config can find libsodium (usually not needed, but safe)
+          # ensure pkg-config sees libsodium
           echo "PKG_CONFIG_PATH=$(brew --prefix libsodium)/lib/pkgconfig" >> $GITHUB_ENV
 
       - name: Build
@@ -39,11 +42,19 @@ jobs:
         run: |
           if [ "${{ matrix.san }}" = "asan" ]; then SAN=asan make test; else make test; fi
 
-      - name: Static analysis
+      - name: Static analysis (cppcheck)
+        run: make cppcheck
+
+      - name: Spellcheck (codespell)
         run: |
-          make cppcheck
-          make codespell
+          # Fail on PRs so contributors fix typos; warn (don’t fail) on direct pushes
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            make codespell
+          else
+            make codespell || echo "::warning ::codespell found issues (non-blocking on push)"
+          fi
 
       - name: Fuzz smoke
         run: |
           if [ "${{ matrix.san }}" = "asan" ]; then SAN=asan make fuzz-smoke; else make fuzz-smoke; fi
+
