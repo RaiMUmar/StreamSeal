@@ -1,6 +1,8 @@
 CC ?= clang
 PKGCONF ?= pkg-config
 
+UNAME_S := $(shell uname -s)
+
 # Dirs
 SRC_DIR := src
 INC_DIR := include
@@ -9,9 +11,15 @@ BIN_DIR := bin
 
 RUNS ?= 1000
 
-# Common flags
-CFLAGS_COMMON = -std=c99 -Wall -pedantic -g $(shell $(PKGCONF) --cflags libsodium) -I./$(INC_DIR)
+# Common flags (no POSIX macro here)
+CFLAGS_COMMON = -std=c99 -Wall -pedantic -g \
+                $(shell $(PKGCONF) --cflags libsodium)
 LDFLAGS      = $(shell $(PKGCONF) --libs libsodium)
+
+# Add POSIX feature macro only on Linux
+ifeq ($(UNAME_S),Linux)
+  CFLAGS_COMMON += -D_POSIX_C_SOURCE=200809L
+endif
 
 # Source files for the main binary
 SRC_FILES := \
